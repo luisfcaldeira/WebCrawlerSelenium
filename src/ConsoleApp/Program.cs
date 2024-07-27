@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Edge;
 
-namespace Selenium
+namespace ConsoleApp
 {
     internal class Program
     {
@@ -18,15 +18,49 @@ namespace Selenium
             var driver = new EdgeDriver();
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
 
-            driver.Navigate().GoToUrl("https://br.investing.com/news/latest-news");
+            var urls = new List<string>()
+            { 
+                "https://br.investing.com/news/latest-news",
+                "https://br.investing.com/news/economy",
+                "https://br.investing.com/news/politics",
+            };
 
-            driver.FindElement(By.ClassName("onetrust-close-btn-handler")).Click();
+            foreach(var url in urls)
+            {
+                NavigateToUrl(driver, url);
 
+                GetUrls(unitOfWork, driver);
+
+                VisitUrls(unitOfWork, driver);
+            }
+
+            driver.Quit();
+        }
+
+        private static void NavigateToUrl(EdgeDriver driver, string url)
+        {
+            driver.Navigate().GoToUrl(url);
+
+            try
+            {
+                driver.FindElement(By.ClassName("onetrust-close-btn-handler")).Click();
+
+            } 
+            catch (Exception) { }
+
+            try
+            {
+                driver.FindElement(By.XPath("//a[@class='signup_close__usH77']")).Click();
+            }
+            catch (Exception) { }
+        }
+
+        private static void GetUrls(UnitOfWork unitOfWork, EdgeDriver driver)
+        {
             var newsList = driver.FindElement(By.XPath("//ul[@data-test='news-list']"));
-
             var anchors = newsList.FindElements(By.XPath("//a[@data-test='article-title-link']"));
 
-            foreach(var a in anchors)
+            foreach (var a in anchors)
             {
                 try
                 {
@@ -35,7 +69,7 @@ namespace Selenium
                     var url = new Url(address);
                     url.PrimeiraPagina = true;
 
-                    if(!unitOfWork.UrlRepository.Exists(url))
+                    if (!unitOfWork.UrlRepository.Exists(url))
                     {
                         unitOfWork.UrlRepository.Add(url);
                     }
@@ -43,8 +77,10 @@ namespace Selenium
                 catch (StaleElementReferenceException) { }
             }
             unitOfWork.Save();
+        }
 
-
+        private static void VisitUrls(UnitOfWork unitOfWork, EdgeDriver driver)
+        {
             var urls = unitOfWork.UrlRepository.GetAll().Where(u => !u.IsVisited());
 
             foreach (var url in urls)
@@ -58,10 +94,13 @@ namespace Selenium
                 var article = new Article(title, content, url);
 
                 unitOfWork.ArticleRepository.Add(article);
+
+                Task.Delay(300).Wait();
             }
 
             unitOfWork.Save();
-            driver.Quit();
+            
         }
+
     }
 }
