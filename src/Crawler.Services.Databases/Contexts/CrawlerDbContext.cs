@@ -9,6 +9,7 @@ namespace Crawler.Services.Databases.Contexts
         public CrawlerDbContext(DbContextOptions<CrawlerDbContext> options) : base(options)
         {
             Database.EnsureCreated();
+            
             //ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             //ChangeTracker.AutoDetectChangesEnabled = false;
             //ChangeTracker.LazyLoadingEnabled = false;
@@ -16,6 +17,7 @@ namespace Crawler.Services.Databases.Contexts
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
+            AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
             base.OnConfiguring(optionsBuilder);
         }
 
