@@ -1,6 +1,6 @@
-﻿using Crawler.Domain.Interfaces.DAL.Repositories;
+﻿using Crawler.Domain.Interfaces.Services.DAL.Repositories;
 
-namespace Crawler.Domain.Interfaces.DAL
+namespace Crawler.Domain.Interfaces.Services.DAL
 {
     public interface IUnitOfWork
     {

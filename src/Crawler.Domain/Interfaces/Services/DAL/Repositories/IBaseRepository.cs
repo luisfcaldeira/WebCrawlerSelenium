@@ -1,6 +1,6 @@
-﻿namespace Crawler.Domain.Interfaces.DAL.Repositories
+﻿namespace Crawler.Domain.Interfaces.Services.DAL.Repositories
 {
-    public interface IBaseRepository<T> where T: class
+    public interface IBaseRepository<T> where T : class
     {
         IEnumerable<T> GetAll();
         T? GetById(object id);

@@ -1,4 +1,4 @@
-﻿using Crawler.Domain.Interfaces.DAL.Repositories;
+﻿using Crawler.Domain.Interfaces.Services.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crawler.Services.Databases.DAL.Repositories

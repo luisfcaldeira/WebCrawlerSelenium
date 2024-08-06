@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
     <PackageReference Include="Selenium.WebDriver" Version="4.23.0" />
   </ItemGroup>
@@ -17,6 +19,16 @@
   <ItemGroup>
     <ProjectReference Include="..\Crawler.Domain\Crawler.Domain.csproj" />
     <ProjectReference Include="..\Crawler.Services.Databases\Crawler.Services.Databases.csproj" />
+    <ProjectReference Include="..\Crawler.Services.Infra\Crawler.Services.Infra.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.example.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

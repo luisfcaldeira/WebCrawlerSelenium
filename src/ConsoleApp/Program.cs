@@ -1,6 +1,9 @@
-﻿using Crawler.Domain.Entities;
+﻿using ConsoleApp.Services;
+using Crawler.Domain.Entities;
+using Crawler.Domain.Interfaces.Services.Infra;
 using Crawler.Services.Databases.Contexts;
 using Crawler.Services.Databases.DAL;
+using Crawler.Services.Infra;
 using Microsoft.EntityFrameworkCore;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -11,31 +14,32 @@ namespace ConsoleApp
     {
         static void Main()
         {
+            var appConfig = new AppConfig();
+
             var options = new DbContextOptionsBuilder<CrawlerDbContext>();
-            //options.UseSqlite(@"Data Source=../../../volume/Scraper.db");
-            options.UseNpgsql("server=192.168.68.113;Port=5432;user id=postgres;password = root; database = ScraperSelenium");
-            //options.UseSqlServer(@"Server=DESKTOP-L0UN16O;Database=WebCrawlerSelenium;User Id=acatc2;Password=acatc2;MultipleActiveResultSets=True;TrustServerCertificate=true");
+            options.UseSqlite(appConfig.GetValue<string>("SqlLiteConnectionString"));
             
             var unitOfWork = new UnitOfWork(new CrawlerDbContext(options.Options));
 
             ChromeOptions chromeOptions = new ChromeOptions();
-            chromeOptions.AddArgument("--disable-extensions");
-            chromeOptions.AddArgument("--headless");
-            chromeOptions.AddArgument("--disable-gpu");
-            chromeOptions.AddArgument("--no-sandbox");
+
+            var browserConfigs = appConfig.GetArray("BrowserDriver");
+
+            foreach(var config in browserConfigs)
+            {
+                chromeOptions.AddArgument(config);
+            }
 
             var driver = new ChromeDriver(chromeOptions);
             //driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
 
-            var urls = new List<string>()
-            { 
-                "https://br.investing.com/news/latest-news",
-                "https://br.investing.com/news/economy",
-                "https://br.investing.com/news/politics",
-            };
+            var urls = appConfig.GetArray("Sites");
 
+            SetAllUrlToDead(unitOfWork);
+            
             foreach(var url in urls)
             {
+
                 NavigateToUrl(driver, url);
 
                 GetUrls(unitOfWork, driver);
@@ -43,7 +47,21 @@ namespace ConsoleApp
                 VisitUrls(unitOfWork, driver);
             }
 
+            ClearDb(unitOfWork);
+
             driver.Quit();
+        }
+
+        private static void SetAllUrlToDead(UnitOfWork unitOfWork)
+        {
+            var urls = unitOfWork.UrlRepository.GetAll();
+
+            foreach(var url in urls)
+            {
+                url.KeepMeAlive = false;
+            }
+
+            unitOfWork.Save();
         }
 
         private static void NavigateToUrl(ChromeDriver driver, string url)
@@ -81,6 +99,10 @@ namespace ConsoleApp
                     if (!unitOfWork.UrlRepository.Exists(url))
                     {
                         unitOfWork.UrlRepository.Add(url);
+                    } else
+                    {
+                        var dbUrl = unitOfWork.UrlRepository.GetUrl(url);
+                        dbUrl.KeepMeAlive = true;
                     }
                 }
                 catch (StaleElementReferenceException) { }
@@ -90,7 +112,9 @@ namespace ConsoleApp
 
         private static void VisitUrls(UnitOfWork unitOfWork, ChromeDriver driver)
         {
+            var appConfig = new AppConfig();
             var urls = unitOfWork.UrlRepository.GetAll().Where(u => !u.IsVisited());
+            IEmailSender emailSender = new EmailSender(appConfig.GetValue<string>("AzureCommunicationConnectionString"));
 
             foreach (var url in urls)
             {
@@ -100,11 +124,21 @@ namespace ConsoleApp
                     driver.Navigate().GoToUrl(url.ToString());
                     var title = driver.FindElement(By.Id("articleTitle")).Text;
                     var content = driver.FindElement(By.Id("article")).Text;
-
                     var article = new Article(title, content, url);
 
-                    url.Visited = DateTime.Now;
                     unitOfWork.ArticleRepository.Add(article);
+                    emailSender.SendEmail(
+                        toEmail: appConfig.GetValue<string>("EmailAdmin"), 
+                        sender: appConfig.GetValue<string>("EmailSender"), 
+                        subject: article.Title, 
+                        message: "<h1>" + article.Title + "</h1>" + 
+                                url + 
+                                "<br>" + 
+                                article.Content
+                        , planText: article.Content);
+
+                    url.Visited = DateTime.Now;
+
                 } catch (Exception)
                 {
                     Console.WriteLine($"Ignoring {url}...");
@@ -116,5 +150,12 @@ namespace ConsoleApp
             unitOfWork.Save();
             
         }
+
+        private static void ClearDb(UnitOfWork unitOfWork)
+        {
+            unitOfWork.UrlRepository.ClearAllDeadUrl();
+            unitOfWork.Save();
+        }
+
     }
 }

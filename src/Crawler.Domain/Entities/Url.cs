@@ -9,6 +9,7 @@ namespace Crawler.Domain.Entities
         public DateTime Created { get; private set; } = DateTime.Now;
         public bool PrimeiraPagina { get; set; }
         public DateTime? Visited {  get; set; }
+        public bool KeepMeAlive { get; set; } = true;
 
         public Url(string value)
         {

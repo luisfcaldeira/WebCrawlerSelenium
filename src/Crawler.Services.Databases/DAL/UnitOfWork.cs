@@ -1,6 +1,6 @@
 ﻿using Crawler.Domain.Entities;
-using Crawler.Domain.Interfaces.DAL;
-using Crawler.Domain.Interfaces.DAL.Repositories;
+using Crawler.Domain.Interfaces.Services.DAL;
+using Crawler.Domain.Interfaces.Services.DAL.Repositories;
 using Crawler.Services.Databases.Contexts;
 using Crawler.Services.Databases.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;

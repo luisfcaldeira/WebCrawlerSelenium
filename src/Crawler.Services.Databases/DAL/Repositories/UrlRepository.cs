@@ -1,5 +1,5 @@
 ﻿using Crawler.Domain.Entities;
-using Crawler.Domain.Interfaces.DAL.Repositories;
+using Crawler.Domain.Interfaces.Services.DAL.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace Crawler.Services.Databases.DAL.Repositories
@@ -13,6 +13,16 @@ namespace Crawler.Services.Databases.DAL.Repositories
         public bool Exists(Url url)
         {
             return GetAll().Where(u => u.Equals(url)).Any();
+        }
+
+        public Url GetUrl(Url url)
+        {
+            return GetAll().Where(u => u.Equals(url)).First();
+        }
+
+        public void ClearAllDeadUrl()
+        {
+            DbSet.RemoveRange(GetAll().Where(u => !u.KeepMeAlive));                
         }
     }
 }
